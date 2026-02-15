@@ -8,12 +8,17 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Supabase requires SSL
+# Handle connection args for SSL
+connect_args = {}
+if DATABASE_URL and "sslmode" not in DATABASE_URL:
+    DATABASE_URL = f"{DATABASE_URL}?sslmode=require"
+
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,  # Handles connection drops
+    pool_pre_ping=True,  # Verify connections before using
     pool_size=5,
-    max_overflow=10
+    max_overflow=10,
+    pool_recycle=300,  # Recycle connections every 5 minutes
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -28,5 +33,4 @@ def get_db():
         db.close()
 
 def init_db():
-    """Create all database tables"""
     Base.metadata.create_all(bind=engine)
